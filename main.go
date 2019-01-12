@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/apptreesoftware/protoc-gen-twirp_dart/generator"
+	"github.com/NoahOrberg/protoc-gen-twirp_dart/generator"
 	"github.com/gogo/protobuf/protoc-gen-gogo/plugin"
 
 	gogogen "github.com/gogo/protobuf/protoc-gen-gogo/generator"
