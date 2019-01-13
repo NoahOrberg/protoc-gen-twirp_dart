@@ -20,6 +20,19 @@ const apiTemplate = `
 import '{{.Path}}';
 {{- end}}
 
+{{- if isNeedToOpts }}
+// NOTE: Maybe this need to be included in the twirp_dart_core library
+class CallOptions {
+	Map<String, String> headers;
+	CallOptions() {
+		headers = new Map<String, String>();
+	}
+	void setHeader(String key, String value) {
+		headers[key] = value;
+	}
+}
+{{- end}}
+
 {{- range .Models}}
 {{- if not .Primitive}}
 class {{.Name}} {
@@ -133,11 +146,16 @@ class Default{{.Name}} implements {{.Name}} {
 	}
 
     {{range .Methods}}
-	Future<{{.OutputType}}>{{.Name}}({{.InputType}} {{.InputArg}}) async {
+	Future<{{.OutputType}}>{{.Name}}({{.InputType}} {{.InputArg}}, {CallOptions opts}) async {
 		var url = "${hostname}${_pathPrefix}{{.Path}}";
 		var uri = Uri.parse(url);
     	var request = new Request('POST', uri);
 		request.headers['Content-Type'] = 'application/json';
+		if (opts != null) {
+		  opts.headers.forEach((String k, String v) {
+			request.headers[k] = v;
+		  });
+		}
     	request.body = json.encode({{.InputArg}}.toJson());
     	var response = await _requester.send(request);
 		if (response.statusCode != 200) {
@@ -402,6 +420,9 @@ func CreateClientAPI(d *descriptor.FileDescriptorProto, generator *generator.Gen
 	funcMap := template.FuncMap{
 		"stringify": stringify,
 		"parse":     parse,
+		// NOTE: This function is needed to support CallOptions.
+		//       For now, only applies to service.proto coz I define only service.proto.
+		"isNeedToOpts": func() bool { return d.Name != nil && strings.HasSuffix(*d.Name, "service.proto") },
 	}
 
 	t, err := template.New("client_api").Funcs(funcMap).Parse(apiTemplate)
